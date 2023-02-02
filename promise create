@@ -1,0 +1,13 @@
+		 
+		SaveDataSetOnServerPromise: function(oData) {
+			return new Promise(function(resolve, reject) {
+			   const sUrl = GeneralConsts.url + "/sap/opu/odata/sap/ZLO_MOBILE_ISSUE_SRV"; 
+			   const oModel = new ODataModel(sUrl);
+			   sap.ui.core.BusyIndicator.show(0);
+			 
+			   oModel.create("/POHeaderSet",oData ,  {
+					success: (oData, oResponse)  => resolve({oData, oResponse}),
+					error:   (oError) => reject(oError)
+			   });
+			});           
+		}, 
