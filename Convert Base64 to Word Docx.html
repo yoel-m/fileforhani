@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Base64 to Word Docx</title>
+</head>
+<body>
+    <h2>Convert Base64 to Word Docx</h2>
+    <textarea id="base64Input" rows="5" cols="40" placeholder="Enter Base64 string"></textarea><br>
+    <button id="convertButton">Convert and Download</button>
+
+    <script>
+        document.getElementById("convertButton").addEventListener("click", function() {
+            var base64String = document.getElementById("base64Input").value;
+            if (base64String) {
+                var byteArray = atob(base64String);
+                var byteNumbers = new Array(byteArray.length);
+                for (var i = 0; i < byteArray.length; i++) {
+                    byteNumbers[i] = byteArray.charCodeAt(i);
+                }
+                var byteArray = new Uint8Array(byteNumbers);
+                
+                var blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+                var url = URL.createObjectURL(blob);
+                
+                var link = document.createElement("a");
+                link.href = url;
+                link.download = "document.docx";
+                link.click();
+            } else {
+                alert("Please enter a valid Base64 string.");
+            }
+        });
+    </script>
+</body>
+</html>
