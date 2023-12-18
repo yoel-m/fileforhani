@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<!-- (c) Yoel Malekan  --> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> JSON Table </title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            max-width: 120px;  /* Set max-width for each cell */
+            white-space: nowrap;  /* Prevent content from wrapping in cells */
+            overflow: hidden;  /* Hide content that exceeds max-width */
+            text-overflow: ellipsis;  /* Display ellipsis for truncated content */
+        }
+
+        th {
+            background-color: #f2f2f2;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .resize-handle {
+            background-color: #ddd;
+            cursor: col-resize;
+            height: 100%;
+            width: 8px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 10;
+        }
+        .export-btn {
+			margin-top:10px;
+            padding: 8px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }		
+
+        #jsonTreeContainer {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            max-width: 600px;
+            overflow: auto;
+        }
+
+        .tree-node {
+            margin-left: 20px;
+            list-style-type: none;
+        }
+
+        .tree-node li {
+            cursor: pointer;
+        }
+
+        .tree-node ul {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1> JSON Table </h1>
+	<p>
+ 
+    <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload()">	
+	</p>
+  
+	<P>
+    <textarea id="jsonInput"   rows="15" cols="100" placeholder="Paste JSON data here"></textarea>
+	 
+	<div id="jsonTreeContainer"></div>	
+	</p>
+  
+    <button onclick="generateTable()">JSON To Table</button>
+    
+    
+    <button onclick="formatJson()">Format JSON</button>
+
+	<p>
+
+ 
+	<button onclick="createJsonTree()">Represent as Tree</button>
+
+
+	</P>
+	
+
+  
+    <div class="table-toolbar">
+        <div></div>  
+        <button  id="excel"  class="export-btn" onclick="exportToExcel()">Export to Excel</button>
+    </div>
+
+ 
+    <div id="table-container"></div>
+	
+	<p>
+    
+    <textarea id="formattedJsonOutput"  rows="20" cols="100" placeholder="Formatted JSON output" readonly></textarea>
+		
+	</p>
+
+    <script>
+ 	
+		function createTable(data) {
+			try {
+				var table = document.getElementById('jsonTable');
+				table.innerHTML = '';
+
+				var colgroup = document.createElement('colgroup');
+				var headerRow = document.createElement('tr');
+				var tbody = document.createElement('tbody');
+
+				 
+				Object.keys(data[0]).forEach(function (key, index) {
+					var col = document.createElement('col');
+					col.style.width = 'auto';
+					colgroup.appendChild(col);
+
+					 
+					var th = document.createElement('th');
+					th.innerHTML = key + '<div class="resize-handle" data-col="' + (index + 1) + '"></div>';
+					headerRow.appendChild(th);
+				});
+
+				 
+				data.forEach(function (item) {
+					var row = document.createElement('tr');
+					Object.values(item).forEach(function (value) {
+						var cell = document.createElement('td');
+						cell.textContent = value;
+
+						 
+						cell.setAttribute('title', JSON.stringify(value));
+
+						row.appendChild(cell);
+					});
+					tbody.appendChild(row);
+				});
+
+				table.appendChild(colgroup);
+				table.appendChild(headerRow);
+				table.appendChild(tbody);
+
+				initColumnResizing();
+			} catch (error) {
+				console.error('Error creating table:', error);
+			}
+		}
+		function createTable(data) {
+			var tableContainer = document.getElementById('table-container');
+			tableContainer.innerHTML = '';
+
+			var table = document.createElement('table');
+			table.id = 'jsonTable';
+
+			var colgroup = document.createElement('colgroup');
+			var thead = document.createElement('thead');
+			var headerRow = document.createElement('tr');
+			var tbody = document.createElement('tbody');
+
+			Object.keys(data[0]).forEach(function (key, index) {
+				var col = document.createElement('col');
+				col.style.width = '120px';   
+				colgroup.appendChild(col);
+
+				 
+				var th = document.createElement('th');
+				th.innerHTML = key + '<div class="resize-handle" data-col="' + (index + 1) + '"></div>';
+				headerRow.appendChild(th);
+			});
+
+			thead.appendChild(headerRow);
+
+			 
+			data.forEach(function (item) {
+				var row = document.createElement('tr');
+				Object.values(item).forEach(function (value, index) {
+					var cell = document.createElement('td');
+					cell.textContent = value;
+					cell.setAttribute('title', JSON.stringify(value));
+
+					row.appendChild(cell);
+				});
+				tbody.appendChild(row);
+			});
+
+			table.appendChild(colgroup);
+			table.appendChild(thead);
+			table.appendChild(tbody);
+
+			tableContainer.appendChild(table);
+
+			initColumnResizing();
+		}
+
+        function generateTable() {
+            var jsonString = document.getElementById('jsonInput').value;
+		
+            try {
+                var jsonData = JSON.parse(jsonString);
+                createTable(jsonData);
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+                alert('Invalid JSON format. Please check your input.');
+            }
+        }		
+		
+        function handleFileUpload() {
+            var fileInput = document.getElementById('fileInput');
+            var file = fileInput.files[0];
+
+            if (file) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    try {
+                        var jsonData = JSON.parse(e.target.result);
+                        createTable(jsonData);
+						strJson = JSON.stringify(jsonData) ; 
+						treeData(strJson) ; 
+						document.getElementById("jsonInput").value = strJson
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        alert('Invalid JSON format. Please check your file.');
+                    }
+                };
+
+                reader.readAsText(file);
+            }
+        }
+        function initColumnResizing() {
+            var table = document.getElementById('jsonTable');
+            var isResizing = false;
+            var startX, startWidth, targetCol;
+
+            function onMouseDown(e) {
+                isResizing = true;
+                startX = e.pageX;
+                startWidth = parseInt(document.defaultView.getComputedStyle(targetCol).width, 10);
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
+
+            function onMouseMove(e) {
+                if (isResizing) {
+                    var newWidth = startWidth + (e.pageX - startX);
+                    targetCol.style.width = newWidth + 'px';
+                }
+            }
+
+            function onMouseUp() {
+                isResizing = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+
+            var tableHeader = table.querySelector('thead tr');
+            var resizeHandles = tableHeader.querySelectorAll('.resize-handle');
+            
+            resizeHandles.forEach(function (handle) {
+                handle.addEventListener('mousedown', function (e) {
+                    targetCol = table.querySelector('col:nth-child(' + handle.getAttribute('data-col') + ')');
+                    onMouseDown(e);
+                });
+            });
+        }
+        function formatJson() {
+            var jsonInput = document.getElementById('jsonInput');
+            var formattedJsonOutput = document.getElementById('formattedJsonOutput');
+
+            try {
+                var json = JSON.parse(jsonInput.value);
+                var formattedJson = JSON.stringify(json, null, 2);
+                formattedJsonOutput.value = formattedJson;
+            } catch (error) {
+                formattedJsonOutput.value = 'Invalid JSON';
+            }
+        }
+        function exportToExcel() {
+            var table = document.getElementById('jsonTable');
+            var rows = table.querySelectorAll('tr');
+            var csvContent = [];
+
+            rows.forEach(function(row) {
+                var rowData = [];
+                var cols = row.querySelectorAll('td, th');
+
+                cols.forEach(function(col) {
+                    rowData.push(col.textContent);
+                });
+
+                csvContent.push(rowData.join(','));
+            });
+
+            var csvString = csvContent.join('\n');
+            var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+
+            if (navigator.msSaveBlob) { // IE 10+
+                navigator.msSaveBlob(blob, 'table_data.csv');
+            } else {
+                link.href = URL.createObjectURL(blob);
+                link.target = '_blank';
+                link.download = 'table_data.csv';
+                link.click();
+            }
+        }
+		//=========================
+	
+		function treeData (jsonInput) {
+			
+			var treeContainer = document.getElementById('jsonTreeContainer');
+
+			if (jsonInput) {
+				var json = JSON.parse(jsonInput);
+				treeContainer.innerHTML = '';  
+
+				var tree = document.createElement('ul');
+				tree.classList.add('tree-node');
+				buildTree(json, tree);
+				treeContainer.appendChild(tree);
+
+				var treeNodes = document.querySelectorAll('.tree-node li');
+				treeNodes.forEach(function (node) {
+					node.addEventListener('click', toggleNode);
+				});
+			}
+		}
+			
+		function createJsonTree() {
+			var jsonInput = document.getElementById('jsonInput').value;
+			this.treeData(jsonInput) ; 
+
+		}
+
+		function buildTree(node, parent) {
+			for (var key in node) {
+				if (node.hasOwnProperty(key)) {
+					var listItem = document.createElement('li');
+					listItem.innerHTML = '<strong>' + key + ':</strong> ' + getNodeValue(node[key]);
+
+					var childNode = node[key];
+					if (typeof childNode === 'object' && childNode !== null) {
+						var childTree = document.createElement('ul');
+						childTree.classList.add('tree-node');
+						listItem.appendChild(childTree);
+						buildTree(childNode, childTree);
+					}
+
+					parent.appendChild(listItem);
+				}
+			}
+		}
+
+		function getNodeValue(value) {
+			if (typeof value === 'object' && value !== null) {
+				var isArray = Array.isArray(value);
+				var label = isArray ? 'Array[' + value.length + ']' : 'Object';
+				return '<span class="node-value" data-type="' + (isArray ? 'array' : 'object') + '">' + label + '</span>';
+			} else {
+				return value;
+			}
+		}
+
+		function toggleNode(event) {
+			var childTree = this.querySelector('ul');
+			if (childTree) {
+				childTree.style.display = (childTree.style.display === 'none' || childTree.style.display === '') ? 'block' : 'none';
+				event.stopPropagation(); 
+			}
+		}
+    </script>
+
+</body>
+</html>
