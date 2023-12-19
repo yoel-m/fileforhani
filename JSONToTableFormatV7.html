@@ -68,11 +68,21 @@
         .tree-node ul {
             display: none;
         }
+
+        #jsonInput, #urlInput {
+            width: 80%;
+            height: 30px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
     <h1> JSON Table </h1>
+    <p>    <!-- Input field for inserting URL to a JSON -->
+        <input type="text" id="urlInput" placeholder="Insert URL to a JSON file">
+        <button onclick="generateTableFromURL()">Submit from URL</button>
+    </p>
 	<p>
  
     <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload()">	
@@ -320,6 +330,19 @@
                 link.click();
             }
         }
+        function generateTableFromURL() {
+            var jsonUrl = document.getElementById('urlInput').value;
+
+            fetch(jsonUrl)
+                .then(response => response.json())
+                .then(data => {
+                    createTable(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching JSON from URL:', error);
+                    alert('Error fetching JSON from URL. Please check the URL.');
+                });
+        }       
 		//=========================
 	
 		function treeData (jsonInput) {
